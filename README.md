@@ -114,7 +114,7 @@ To further streamline deployment and improve development efficiency, I introduce
 
 ### CI/CD Pipeline:
 Automated pipeline script to:
-- Run tests (unit & e2e) before deployment.
+- Run tests (unit & e2e) before deployment when a test DB is connected for the pipeline.
 - Build the Docker image.
 - Deploy the service to production automatically.
 - This ensures code quality and smooth deployments.
