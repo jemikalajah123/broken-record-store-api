@@ -71,10 +71,7 @@ To improve query performance and reduce database load, I integrated **Redis cach
 # Restructuring the Project Setup for Scalability & Maintainability  
 
 ## 🔹 Issues with Previous Project Structure:  
-- The project structure was not modular, leading to tight coupling of components.  
-- External service integrations were scattered across different files, making maintenance difficult.  
-- Controllers contained business logic, making them less readable and harder to test.  
-- DTOs (Data Transfer Objects) were missing, leading to inconsistent data handling.  
+- Controllers contained business logic, making them less readable and harder to test.    
 - Imports were messy due to a lack of centralized index files.  
 
 ## ✅ Restructured Project Setup:  
@@ -85,7 +82,7 @@ To improve query performance and reduce database load, I integrated **Redis cach
 - **Shared Module:** Includes reusable utilities like HTTP interceptors, response formatters, and validation helpers.  
 
 ### 2. **Controller Cleanup:**  
-- Moved authentication logic into a dedicated **AuthService**, keeping controllers clean.  
+- Moved logic into a dedicated **Service**, keeping controllers clean.  
 - Separated order-related logic into **OrderService** to ensure single responsibility.  
 
 ### 3. **Introduced DTOs (Data Transfer Objects):**  
