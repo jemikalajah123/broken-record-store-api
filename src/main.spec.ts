@@ -1,22 +1,20 @@
 import { NestFactory } from '@nestjs/core';
+import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
-import { SwaggerModule } from '@nestjs/swagger';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 
-// ✅ Mock NestFactory
 jest.mock('@nestjs/core', () => ({
   NestFactory: {
     create: jest.fn(),
   },
 }));
 
-// ✅ Mock SwaggerModule correctly
 jest.mock('@nestjs/swagger', () => {
   const actualSwagger = jest.requireActual('@nestjs/swagger');
-
   return {
-    ...actualSwagger, // Keep actual Swagger decorators
+    ...actualSwagger,
     SwaggerModule: {
-      createDocument: jest.fn().mockReturnValue({}), // Mock API doc generation
+      createDocument: jest.fn().mockReturnValue({}),
       setup: jest.fn(),
     },
     DocumentBuilder: jest.fn(() => ({
@@ -29,40 +27,48 @@ jest.mock('@nestjs/swagger', () => {
   };
 });
 
-describe('Bootstrap', () => {
+
+describe('Application Bootstrap', () => {
   let app: any;
-  let bootstrapFn: () => Promise<void>;
 
   beforeEach(async () => {
-    process.env.PORT = '4000';
-
     app = {
       useGlobalPipes: jest.fn(),
+      enableCors: jest.fn(),
       listen: jest.fn(),
-      enableCors: jest.fn(), // ✅ Add mock for enableCors
     };
 
+    // Mock the create method to return the mocked app
     (NestFactory.create as jest.Mock).mockResolvedValue(app);
 
-    // ✅ Properly import `bootstrap` function
-    const { bootstrap } = jest.requireActual('./main');  
-    bootstrapFn = bootstrap; // Assign the function
-
-    await bootstrapFn(); // ✅ Ensure it runs before assertions
+    // Dynamically import the main file to trigger the bootstrap function
+    await import('./main');
   });
 
   afterEach(() => {
-    delete process.env.PORT;
-    jest.resetModules();
     jest.clearAllMocks();
+    jest.resetModules();
   });
 
-  it('should start the application', async () => {
-    expect(NestFactory.create).toHaveBeenCalledWith(expect.any(Function));
+  it('should initialize the application correctly', async () => {
+    // Verify that NestFactory.create was called with AppModule
+    expect(NestFactory.create).toHaveBeenCalledWith(AppModule);
+
+    // Verify that global pipes were set up
     expect(app.useGlobalPipes).toHaveBeenCalledWith(expect.any(ValidationPipe));
-    expect(app.enableCors).toHaveBeenCalled();
+
+    // Verify that CORS was enabled
+    expect(app.enableCors).toHaveBeenCalledWith({
+      origin: '*',
+      methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+      allowedHeaders: 'Content-Type, Authorization',
+    });
+
+    // Verify that Swagger document was created and setup
     expect(SwaggerModule.createDocument).toHaveBeenCalledWith(app, expect.any(Object));
     expect(SwaggerModule.setup).toHaveBeenCalledWith('swagger', app, expect.any(Object));
-    expect(app.listen).toHaveBeenCalledWith(process.env.PORT);
+
+    // Verify that the app was instructed to listen on the specified port
+    expect(app.listen).toHaveBeenCalledWith(expect.any(Number));
   });
 });

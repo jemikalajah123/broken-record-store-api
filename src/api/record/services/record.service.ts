@@ -9,9 +9,8 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { Cache } from 'cache-manager';
 import { Record } from '../schemas';
-import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { CACHE_MANAGER, Cache } from '@nestjs/cache-manager';
 import { CreateRecordRequestDTO, UpdateRecordRequestDTO } from '../dtos';
 import { IApiResponse } from '../../../shared/types';
 import { RecordFormat, RecordCategory } from '../schemas/record.enum';
@@ -22,7 +21,7 @@ export class RecordService {
   private readonly logger = new Logger(RecordService.name);
 
   constructor(
-    @InjectModel('Record') private readonly recordModel: Model<Record>,
+    @InjectModel(Record.name) private readonly recordModel: Model<Record>,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
     private readonly musicBrainzService: MusicBrainzService,
   ) {}
