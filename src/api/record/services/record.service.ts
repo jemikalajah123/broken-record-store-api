@@ -4,6 +4,7 @@ import {
   Inject,
   InternalServerErrorException,
   NotFoundException,
+  ConflictException,
   BadRequestException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
@@ -45,6 +46,10 @@ export class RecordService {
       };
     } catch (error) {
       this.logger.error('Error creating record', error.stack);
+      if (error.code === 11000) {
+        throw new ConflictException('A record with this artist, album, and format already exists.');
+      }
+
       throw new InternalServerErrorException('Failed to create record');
     }
   }
@@ -107,14 +112,12 @@ export class RecordService {
   
       const query: any = {};
       if (q) {
-        query.$or = [
-          { artist: new RegExp(q, 'i') },
-          { album: new RegExp(q, 'i') },
-          { category: new RegExp(q, 'i') },
-        ];
+        query.$text = { $search: q };
+      }else{
+        if (artist) query.artist = { $regex: `^${artist}$`, $options: 'i' };
+        if (album) query.album = { $regex: `^${album}$`, $options: 'i' };     
       }
-      if (artist) query.artist = new RegExp(artist, 'i');
-      if (album) query.album = new RegExp(album, 'i');
+      
       if (format) query.format = format;
       if (category) query.category = category;
   
@@ -123,6 +126,7 @@ export class RecordService {
         .find(query)
         .skip((page - 1) * limit)
         .limit(limit)
+        .sort({createdAt: -1 })
         .exec();
 
       const res = {

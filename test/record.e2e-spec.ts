@@ -23,7 +23,7 @@ describe('RecordController (e2e)', () => {
   it('should create a new record', async () => {
     const createRecordDto = {
       artist: 'The Beatles',
-      album: 'Abbey Road',
+      album: 'Abbeyys Road',
       price: 25,
       qty: 10,
       format: RecordFormat.VINYL,
@@ -37,7 +37,7 @@ describe('RecordController (e2e)', () => {
 
     recordId = response.body.data._id;
     expect(response.body.data).toHaveProperty('artist', 'The Beatles');
-    expect(response.body.data).toHaveProperty('album', 'Abbey Road');
+    expect(response.body.data).toHaveProperty('album', 'Abbeyys Road');
   });
 
   it('should create a new record and fetch it with filters', async () => {
@@ -67,7 +67,7 @@ describe('RecordController (e2e)', () => {
   // Test to create a record
   it('should create a new record', async () => {
     const createRecordDto = {
-      artist: 'The Beatles',
+      artist: 'Them Beatles',
       album: 'Abbey Road',
       price: 25,
       qty: 10,
@@ -83,7 +83,7 @@ describe('RecordController (e2e)', () => {
 
     recordId = response.body.data._id;
     expect(response.body).toHaveProperty('status', true);
-    expect(response.body.data).toHaveProperty('artist', 'The Beatles');
+    expect(response.body.data).toHaveProperty('artist', 'Them Beatles');
     expect(response.body.data).toHaveProperty('album', 'Abbey Road');
   });
 
@@ -91,7 +91,7 @@ describe('RecordController (e2e)', () => {
   it('should update an existing record', async () => {
 
     const createRecordDto = {
-      artist: 'The Beatles',
+      artist: 'Themy Beatles',
       album: 'Abbey Road',
       price: 25,
       qty: 10,
@@ -108,7 +108,7 @@ describe('RecordController (e2e)', () => {
     recordId = res.body.data._id;
 
     const updateRecordDto = {
-      album: 'Abbey Road - Remastered',
+      album: 'Abbey Rd - Remastered',
     };
 
     const response = await request(app.getHttpServer())
@@ -119,23 +119,57 @@ describe('RecordController (e2e)', () => {
     expect(response.body).toHaveProperty('status', true);
     expect(response.body.data).toHaveProperty(
       'album',
-      'Abbey Road - Remastered',
+      'Abbey Rd - Remastered',
     );
   });
 
   // Test to get all records with filters
   it('should get records filtered by artist', async () => {
+
+    const createRecordDto = {
+      artist: 'Frank Beatles',
+      album: 'Abbey Road',
+      price: 25,
+      qty: 10,
+      format: RecordFormat.VINYL,
+      category: RecordCategory.POP
+    };
+
+    const res = await request(app.getHttpServer())
+      .post('/records')
+      .send(createRecordDto)
+      .expect(201);
+
+    recordId = res.body.data._id;
+    
     const response = await request(app.getHttpServer())
-      .get('/records?artist=The Beatles')
+      .get('/records?artist=Frank Beatles')
       .expect(200);
 
     expect(response.body).toHaveProperty('status', true);
     expect(response.body.data.records.length).toBeGreaterThan(0);
-    expect(response.body.data.records[0]).toHaveProperty('artist', 'The Beatles');
+    expect(response.body.data.records[0]).toHaveProperty('artist', 'Frank Beatles');
   });
 
   // Test to get all records with multiple filters
   it('should get records filtered by category and format', async () => {
+    const createRecordDto = {
+      artist: 'john Beatles',
+      album: 'Abbey Road',
+      price: 25,
+      qty: 10,
+      format: RecordFormat.VINYL,
+      category: RecordCategory.ROCK,
+      mbid: '63823c15-6abc-473e-9fad-d0d0fa983b34',
+    };
+
+    const res = await request(app.getHttpServer())
+      .post('/records')
+      .send(createRecordDto)
+      .expect(201);
+
+    recordId = res.body.data._id;
+
     const response = await request(app.getHttpServer())
       .get(
         `/records?category=${RecordCategory.ROCK}&format=${RecordFormat.VINYL}`,

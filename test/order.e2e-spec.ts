@@ -23,7 +23,7 @@ describe('OrderController (e2e)', () => {
 
   it('should create a new order', async () => {
     const record = await recordModel.create({
-      artist: 'The Beatles',
+      artist: 'New Beatles',
       album: 'Abbey Road',
       price: 25,
       qty: 10,
@@ -51,7 +51,7 @@ describe('OrderController (e2e)', () => {
   it('should not create an order if stock is insufficient', async () => {
 
     const record = await recordModel.create({
-      artist: 'The Beatles',
+      artist: 'fivey Beatles',
       album: 'Abbey Road',
       price: 25,
       qty: 10,
@@ -59,6 +59,8 @@ describe('OrderController (e2e)', () => {
       category: 'Pop',
       mbid: '63823c15-6abc-473e-9fad-d0d0fa983b34x',
     });
+
+    recordId = record._id;
 
     const createOrderDto = {
       recordId: record._id,
@@ -69,7 +71,7 @@ describe('OrderController (e2e)', () => {
       .post('/orders')
       .send(createOrderDto)
       .expect(400);
-
+      
     expect(response.body).toHaveProperty('error', 'Bad Request');
     expect(response.body).toHaveProperty(
       'message',
@@ -89,14 +91,15 @@ describe('OrderController (e2e)', () => {
   it('should get an order by ID', async () => {
 
     const record = await recordModel.create({
-      artist: 'The Beatles',
+      artist: 'The meal',
       album: 'Abbey Road',
       price: 25,
       qty: 10,
       format: 'Vinyl',
-      category: 'Pop',
-      mbid: '63823c15-6abc-473e-9fad-d0d0fa983b34x',
+      category: 'Pop'
     });
+
+    recordId = record._id;
 
     const createOrderDto = {
       recordId: record._id,
@@ -107,6 +110,8 @@ describe('OrderController (e2e)', () => {
     .post('/orders')
     .send(createOrderDto)
     .expect(201);
+
+    orderId = res.body.data._id;
 
     const response = await request(app.getHttpServer())
       .get(`/orders/${res.body.data._id}`)

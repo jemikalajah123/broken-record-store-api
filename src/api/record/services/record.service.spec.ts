@@ -95,6 +95,15 @@ describe('RecordService', () => {
     
       await expect(service.createRecord(dto)).rejects.toThrow(InternalServerErrorException);
     });
+
+    it('should throw ConflictException for duplicate records', async () => {
+      jest.spyOn(recordModel, 'create').mockRejectedValue({ code: 11000 });
+  
+      await expect(
+        service.createRecord({ artist: 'The Beatles', album: 'Abbey Road', format: RecordFormat.VINYL, price: 1000,
+          qty: 10, category: RecordCategory.ROCK, })
+      ).rejects.toThrow('A record with this artist, album, and format already exists.');
+    })
   
   });
 
@@ -161,6 +170,54 @@ describe('RecordService', () => {
     });
   });
 
+  describe('findAllCacheRecords', () => {
+    beforeEach(() => {
+      jest.clearAllMocks();
+    });
+  
+    it('should fetch records from database if cache is empty', async () => {
+      // Mock cacheManager to return null (simulate cache miss)
+      cacheManager.get.mockResolvedValue(null);
+  
+      // Mock database queries
+      jest.spyOn(recordModel, 'countDocuments').mockResolvedValue(1);
+      jest.spyOn(recordModel, 'find').mockReturnValue({
+        skip: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockReturnThis(),
+        sort: jest.fn().mockReturnThis(),
+        exec: jest.fn().mockResolvedValue([mockRecord]),
+      });
+  
+      const response = await service.findAllRecords();
+  
+      expect(response.data.records).toEqual([mockRecord]);
+      expect(recordModel.find).toHaveBeenCalled();
+      expect(recordModel.countDocuments).toHaveBeenCalled();
+      expect(cacheManager.set).toHaveBeenCalledWith(expect.any(String), expect.any(Object), 60 * 1000);
+    });
+  
+    it('should log a warning when cache retrieval fails', async () => {
+      // Simulate cache failure
+      jest.spyOn(cacheManager, 'get').mockRejectedValue(new Error('Cache error'));
+      jest.spyOn(service['logger'], 'warn').mockImplementation();
+  
+      // Mock database queries
+      jest.spyOn(recordModel, 'countDocuments').mockResolvedValue(1);
+      jest.spyOn(recordModel, 'find').mockReturnValue({
+        skip: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockReturnThis(),
+        sort: jest.fn().mockReturnThis(),
+        exec: jest.fn().mockResolvedValue([mockRecord]),
+      });
+  
+      await service.findAllRecords();
+  
+      expect(service['logger'].warn).toHaveBeenCalledWith('Cache retrieval failed: Cache error');
+      expect(recordModel.find).toHaveBeenCalled();
+    });
+  });
+  
+
   describe('findAllRecords', () => {
     it('should return cached records if available', async () => {
       const mockResponse = {
@@ -198,25 +255,48 @@ describe('RecordService', () => {
       expect(result).toEqual(mockResponse);
     });
     
+    it('should filter records by artist and album', async () => {
+      cacheManager.get.mockResolvedValue(null); // Simulate cache miss
+    
+      const mockArtist = 'The Beatles';
+      const mockAlbum = 'Abbey Road';
+    
+      // Mock database queries
+      jest.spyOn(recordModel, 'countDocuments').mockResolvedValue(1);
+    
+      jest.spyOn(recordModel, 'find').mockImplementation((query) => {
+        // Explicitly cast query as an object
+        const typedQuery = query as { [key: string]: any };
+    
+        expect(typedQuery.artist).toEqual({ $regex: `^${mockArtist}$`, $options: 'i' });
+        expect(typedQuery.album).toEqual({ $regex: `^${mockAlbum}$`, $options: 'i' });
+    
+        return {
+          skip: jest.fn().mockReturnThis(),
+          limit: jest.fn().mockReturnThis(),
+          sort: jest.fn().mockReturnThis(),
+          exec: jest.fn().mockResolvedValue([mockRecord]),
+        };
+      });
+    
+      await service.findAllRecords(undefined, mockArtist, mockAlbum);
+    
+      expect(recordModel.find).toHaveBeenCalled();
+    });
+    
+    
 
     it('should return empty array when no records are found', async () => {
       jest.spyOn(recordModel, 'find').mockReturnValueOnce({
         skip: jest.fn().mockReturnThis(),
         limit: jest.fn().mockReturnThis(),
+        sort: jest.fn().mockReturnThis(),
         exec: jest.fn().mockResolvedValue([]),
       });
     
       const response = await service.findAllRecords();
       expect(response.data.records).toEqual([]);
-    });
-    
-    it('should log a warning when cache retrieval fails', async () => {
-      jest.spyOn(cacheManager, 'get').mockRejectedValue(new Error('Cache error'));
-      jest.spyOn(service['logger'], 'warn').mockImplementation();
-    
-      await service.findAllRecords();  
-      expect(service['logger'].warn).toHaveBeenCalledWith('Cache retrieval failed: Cache error');
-    });    
+    }); 
     
     it('should filter records based on the search query', async () => {
       const mockRecords = [{ artist: 'Test Artist', album: 'Test Album', category: 'Test Category' }];
@@ -225,6 +305,7 @@ describe('RecordService', () => {
       jest.spyOn(recordModel, 'find').mockReturnValue({
         skip: jest.fn().mockReturnThis(),
         limit: jest.fn().mockReturnThis(),
+        sort: jest.fn().mockReturnThis(),
         exec: jest.fn().mockResolvedValue(mockRecords),
       } as any);
       jest.spyOn(recordModel, 'countDocuments').mockResolvedValue(mockRecords.length);
@@ -234,11 +315,9 @@ describe('RecordService', () => {
       expect(result.status).toBe(true);
       expect(result.data.records).toEqual(mockRecords);
       expect(recordModel.find).toHaveBeenCalledWith({
-        $or: [
-          { artist: new RegExp('Test', 'i') },
-          { album: new RegExp('Test', 'i') },
-          { category: new RegExp('Test', 'i') },
-        ],
+        "$text": {
+          "$search": "Test",
+          },
       });
     }); 
 
@@ -272,6 +351,7 @@ describe('RecordService', () => {
       jest.spyOn(recordModel, 'find').mockReturnValue({
         skip: jest.fn().mockReturnThis(),
         limit: jest.fn().mockReturnThis(),
+        sort: jest.fn().mockReturnThis(),
         exec: jest.fn().mockResolvedValue(mockRecords),
       } as any);
       jest.spyOn(recordModel, 'countDocuments').mockResolvedValue(1);
@@ -288,24 +368,14 @@ describe('RecordService', () => {
     
       expect(result.status).toBe(true);
       expect(recordModel.find).toHaveBeenCalledWith({
-        $or: [
-          { artist: new RegExp('searchQuery', 'i') },
-          { album: new RegExp('searchQuery', 'i') },
-          { category: new RegExp('searchQuery', 'i') },
-        ],
-        artist: new RegExp('Artist1', 'i'),
-        album: new RegExp('Album1', 'i'),
+       "$text":{
+         "$search": "searchQuery",
+        },
         format: RecordFormat.VINYL,
         category: RecordCategory.JAZZ,
       });
     });    
-    
-
-    it('should fetch records from database if cache is empty', async () => {
-      cacheManager.get.mockResolvedValue(null);
-      const response = await service.findAllRecords();
-      expect(response.data.records).toEqual([mockRecord]);
-    });
+  
   });
 
 

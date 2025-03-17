@@ -36,3 +36,11 @@ export class Record extends Document {
 }
 
 export const RecordSchema = SchemaFactory.createForClass(Record);
+// Enforce unique constraint on (artist, album, format)
+RecordSchema.index({ artist: 1, album: 1, format: 1 }, { unique: true });
+RecordSchema.index({ artist: 1 });
+RecordSchema.index({ album: 1 });
+RecordSchema.index({ format: 1 });
+RecordSchema.index({ category: 1 });
+RecordSchema.index({ artist: 'text', album: 'text', category: 'text', format: 'text' });
+
