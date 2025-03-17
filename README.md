@@ -110,14 +110,14 @@ To further streamline deployment and improve development efficiency, I introduce
 ### Dockerization:
 
 - Created a Dockerfile for local development and a Dockerfile.prod for optimized production builds.
-- Ensures a consistent environment across all deployments.
+- This ensures a consistent environment across all deployments.
 
 ### CI/CD Pipeline:
 Automated pipeline script to:
 - Run tests (unit & e2e) before deployment.
 - Build the Docker image.
 - Deploy the service to production automatically.
-- Ensures code quality and smooth deployments.
+- This ensures code quality and smooth deployments.
 
 # Summary  
 
