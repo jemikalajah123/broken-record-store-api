@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { OrderService } from '../services/order.service';
+import { OrderService } from '../services';
 import { getModelToken } from '@nestjs/mongoose';
-import { Order } from '../schemas/order.schema';
+import { Order } from '../schemas';
 import { RecordService } from '../../record/services';
 import {
   BadRequestException,
@@ -67,6 +67,20 @@ describe('OrderService', () => {
       );
       expect(mockOrderModel.create).toHaveBeenCalledWith(createOrderDto);
     });
+
+    it('should throw InternalServerErrorException with default message if error has no message', async () => {
+      const errorWithoutMessage = new Error();
+      delete errorWithoutMessage.message; // Ensure error has no message
+    
+      mockRecordService.findOne.mockRejectedValue(errorWithoutMessage);
+    
+      await expect(
+        service.createOrder({ recordId: 'recordId123', quantity: 2 }),
+      ).rejects.toThrowError(
+        new InternalServerErrorException('An unexpected error occurred'),
+      );
+    });
+    
 
     it('should throw NotFoundException if record is not found', async () => {
       mockRecordService.findOne.mockResolvedValue(null);

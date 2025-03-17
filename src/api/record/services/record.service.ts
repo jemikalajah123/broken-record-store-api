@@ -3,6 +3,8 @@ import {
   Logger,
   Inject,
   InternalServerErrorException,
+  NotFoundException,
+  BadRequestException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -42,7 +44,7 @@ export class RecordService {
         data: record,
       };
     } catch (error) {
-      this.logger.error('Error creating record', error);
+      this.logger.error('Error creating record', error.stack);
       throw new InternalServerErrorException('Failed to create record');
     }
   }
@@ -51,25 +53,33 @@ export class RecordService {
     id: string,
     updateDto: UpdateRecordRequestDTO,
   ): Promise<IApiResponse> {
-    const record = await this.recordModel.findById(id);
-    if (!record) {
-      throw new InternalServerErrorException('Record not found');
+    try {
+      const record = await this.recordModel.findById(id);
+      if (!record) {
+        throw new NotFoundException('Record not found');
+      }
+  
+      if (updateDto.mbid && updateDto.mbid !== record.mbid) {
+        updateDto.tracklist = await this.musicBrainzService.fetchTracklist(
+          updateDto.mbid,
+        );
+      }
+  
+      Object.assign(record, updateDto);
+      await record.save();
+  
+      return {
+        status: true,
+        message: 'Record updated successfully',
+        data: record,
+      };
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      this.logger.error(`Failed to update record: ${error.message}`, error.stack);
+      throw new InternalServerErrorException('Failed to update record');
     }
-
-    if (updateDto.mbid && updateDto.mbid !== record.mbid) {
-      updateDto.tracklist = await this.musicBrainzService.fetchTracklist(
-        updateDto.mbid,
-      );
-    }
-
-    Object.assign(record, updateDto);
-    await record.save();
-
-    return {
-      status: true,
-      message: 'Record updated successfully',
-      data: record,
-    };
   }
 
   async findAllRecords(
@@ -82,82 +92,109 @@ export class RecordService {
     limit: number = 20,
   ): Promise<IApiResponse> {
     const cacheKey = `records:${q || ''}:${artist || ''}:${album || ''}:${format || ''}:${category || ''}:${page}:${limit}`;
-    const cachedRecords = await this.cacheManager.get<Record[]>(cacheKey);
-    if (cachedRecords) {
+  
+    try {
+      let cachedRecords: Record[] | null = null;
+      try {
+        cachedRecords = await this.cacheManager.get<Record[]>(cacheKey);
+      } catch (cacheError) {
+        this.logger.warn(`Cache retrieval failed: ${cacheError.message}`);
+      }
+
+      if (cachedRecords) {
+        return {
+          status: true,
+          message: 'Records fetched successfully (cached)',
+          data: {
+            records: cachedRecords,
+            pagination: {
+              page,
+              limit,
+              totalPages: Math.ceil(cachedRecords.length / limit),
+              totalRecords: cachedRecords.length,
+            },
+          },
+        };
+      }
+  
+      const query: any = {};
+      if (q) {
+        query.$or = [
+          { artist: new RegExp(q, 'i') },
+          { album: new RegExp(q, 'i') },
+          { category: new RegExp(q, 'i') },
+        ];
+      }
+      if (artist) query.artist = new RegExp(artist, 'i');
+      if (album) query.album = new RegExp(album, 'i');
+      if (format) query.format = format;
+      if (category) query.category = category;
+  
+      const totalRecords = await this.recordModel.countDocuments(query);
+      const records = await this.recordModel
+        .find(query)
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .exec();
+  
+      await this.cacheManager.set(cacheKey, records, 60 * 1000);
+  
       return {
         status: true,
         message: 'Records fetched successfully',
-        data:{ 
-        record: cachedRecords,
-        pagination: {
-          page,
-          limit,
-          totalPages: Math.ceil(cachedRecords.length / limit),
-          totalRecords: cachedRecords.length,
-        },}
+        data: {
+          records,
+          pagination: {
+            page,
+            limit,
+            totalPages: Math.ceil(totalRecords / limit),
+            totalRecords,
+          },
+        },
       };
+    } catch (error) {
+      this.logger.error(`Failed to fetch records: ${error.message}`, error.stack);
+      throw new InternalServerErrorException('Failed to fetch records');
     }
-  
-    const query: any = {};
-    if (q) {
-      query.$or = [
-        { artist: new RegExp(q, 'i') },
-        { album: new RegExp(q, 'i') },
-        { category: new RegExp(q, 'i') },
-      ];
-    }
-    if (artist) query.artist = new RegExp(artist, 'i');
-    if (album) query.album = new RegExp(album, 'i');
-    if (format) query.format = format;
-    if (category) query.category = category;
-  
-    // Get total count of matching records
-    const totalRecords = await this.recordModel.countDocuments(query);
-  
-    const records = await this.recordModel
-      .find(query)
-      .skip((page - 1) * limit)
-      .limit(limit)
-      .exec();
-  
-    await this.cacheManager.set(cacheKey, records, 60 * 1000);
-    return {
-      status: true,
-      message: 'Records fetched successfully',
-      data:{
-        records,
-        pagination: {
-          page,
-          limit,
-          totalPages: Math.ceil(totalRecords / limit),
-          totalRecords,
-        }
-      } 
-    };
   }
   
-
   async updateStock(recordId: string, quantityChange: number): Promise<Record> {
-    const record = await this.recordModel.findById(recordId);
-    if (!record) {
-      throw new Error(`Record with ID ${recordId} not found`);
+    try {
+      const record = await this.recordModel.findById(recordId);
+      if (!record) {
+        throw new NotFoundException(`Record with ID ${recordId} not found`);
+      }
+    
+      if (record.qty + quantityChange < 0) {
+        throw new BadRequestException('Not enough stock available');
+      }
+      record.qty += quantityChange;
+      await record.save();
+      return record;
+    } catch (error) {
+      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+        throw error;
+      }
+      this.logger.error(`Failed to update stock: ${error.message}`, error.stack);
+      throw new InternalServerErrorException('Failed to update stock');
     }
-
-    // Ensure stock doesn't go below zero
-    if (record.qty + quantityChange < 0) {
-      throw new Error('Not enough stock available');
-    }
-
-    record.qty += quantityChange;
-    await record.save();
-    return record;
+    
   }
-
-  async findOne(recordId: string): Promise<Record> {
-    const record = await this.recordModel.findById(recordId);
-    if (!record) {
-      throw new Error(`Record with ID ${recordId} not found`);
+  
+  async findOne(recordId: string): Promise<Record | null> {
+    try {
+      const record = await this.recordModel.findById(recordId);
+      if (!record) {
+        throw new NotFoundException(`Record with ID ${recordId} not found`);
+      }
+      return record;
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      this.logger.error(`Failed to fetch record: ${error.message}`, error.stack);
+      throw new InternalServerErrorException('Failed to fetch record');
     }
-    return record;
+    
   }
 }

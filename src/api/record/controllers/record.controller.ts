@@ -1,10 +1,10 @@
 import { Controller, Get, Post, Body, Param, Query, Put } from '@nestjs/common';
-import { Record } from '../schemas/record.schema';
+import { Record } from '../schemas';
 import { ApiOperation, ApiQuery, ApiResponse } from '@nestjs/swagger';
-import { CreateRecordRequestDTO } from '../dtos/create-record.request.dto';
-import { RecordCategory, RecordFormat } from '../schemas/record.enum';
-import { UpdateRecordRequestDTO } from '../dtos/update-record.request.dto';
-import { RecordService } from '../services/record.service';
+import { CreateRecordRequestDTO } from '../dtos';
+import { RecordCategory, RecordFormat } from '../schemas';
+import { UpdateRecordRequestDTO } from '../dtos';
+import { RecordService } from '../services';
 import { IApiResponse } from 'src/shared/types';
 import { GetRecordsQueryDto } from '../dtos';
 

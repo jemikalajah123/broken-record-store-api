@@ -1,5 +1,5 @@
 import { IsOptional, IsString, IsInt, Min } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 
 export class GetRecordsQueryDto {
   @IsOptional()
@@ -23,13 +23,13 @@ export class GetRecordsQueryDto {
   category?: string;
 
   @IsOptional()
-  @Type(() => Number)
+  @Transform(({ value }) => Number(value))
   @IsInt()
   @Min(1)
   page: number = 1;
 
   @IsOptional()
-  @Type(() => Number)
+  @Transform(({ value }) => Number(value))
   @IsInt()
   @Min(1)
   limit: number = 20;

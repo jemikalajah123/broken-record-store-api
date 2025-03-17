@@ -1,6 +1,6 @@
 import { Controller, Post, Body, Get, Param } from '@nestjs/common';
-import { OrderService } from '../services/order.service';
-import { CreateOrderDto } from '../dto/create-order.dto';
+import { OrderService } from '../services';
+import { CreateOrderDto } from '../dto';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { IApiResponse } from '../../../shared/types';
 

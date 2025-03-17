@@ -60,8 +60,8 @@ describe('RecordController (e2e)', () => {
     const response = await request(app.getHttpServer())
       .get('/records?artist=The Fake Band')
       .expect(200);
-      expect(response.body.data.length).toBe(8);
-    expect(response.body.data[0]).toHaveProperty('artist', 'The Fake Band');
+      expect(response.body.data.records.length).toBe(8);
+    expect(response.body.data.records[0]).toHaveProperty('artist', 'The Fake Band');
   });
 
   // Test to create a record
@@ -130,8 +130,8 @@ describe('RecordController (e2e)', () => {
       .expect(200);
 
     expect(response.body).toHaveProperty('status', true);
-    expect(response.body.data.length).toBeGreaterThan(0);
-    expect(response.body.data[0]).toHaveProperty('artist', 'The Beatles');
+    expect(response.body.data.records.length).toBeGreaterThan(0);
+    expect(response.body.data.records[0]).toHaveProperty('artist', 'The Beatles');
   });
 
   // Test to get all records with multiple filters
@@ -143,12 +143,12 @@ describe('RecordController (e2e)', () => {
       .expect(200);
 
     expect(response.body).toHaveProperty('status', true);
-    expect(response.body.data.length).toBeGreaterThan(0);
-    expect(response.body.data[0]).toHaveProperty(
+    expect(response.body.data.records.length).toBeGreaterThan(0);
+    expect(response.body.data.records[0]).toHaveProperty(
       'category',
       RecordCategory.ROCK,
     );
-    expect(response.body.data[0]).toHaveProperty('format', RecordFormat.VINYL);
+    expect(response.body.data.records[0]).toHaveProperty('format', RecordFormat.VINYL);
   });
 
   afterEach(async () => {
