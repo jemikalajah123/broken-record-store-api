@@ -44,7 +44,7 @@ describe('RecordController', () => {
       const response = { status: true, message: 'Record created', data: dto };
 
       jest.spyOn(service, 'createRecord').mockResolvedValue(response);
-      expect(await controller.create(dto)).toEqual(response);
+      expect(await controller.createRecord(dto)).toEqual(response);
     });
 
     it('should throw an error if service fails', async () => {
@@ -53,7 +53,7 @@ describe('RecordController', () => {
         .spyOn(service, 'createRecord')
         .mockRejectedValue(new Error('Service Error'));
 
-      await expect(controller.create(dto)).rejects.toThrow('Service Error');
+      await expect(controller.createRecord(dto)).rejects.toThrow('Service Error');
     });
   });
 
@@ -64,7 +64,7 @@ describe('RecordController', () => {
       const response = { status: true, message: 'Record updated', data: dto };
 
       jest.spyOn(service, 'updateRecord').mockResolvedValue(response);
-      expect(await controller.update(id, dto)).toEqual(response);
+      expect(await controller.updateRecord(id, dto)).toEqual(response);
     });
 
     it('should throw an error if the record does not exist', async () => {
@@ -74,7 +74,7 @@ describe('RecordController', () => {
         .spyOn(service, 'updateRecord')
         .mockRejectedValue(new Error('Cannot find record to update'));
 
-      await expect(controller.update(id, dto)).rejects.toThrow(
+      await expect(controller.updateRecord(id, dto)).rejects.toThrow(
         'Cannot find record to update',
       );
     });
@@ -85,7 +85,7 @@ describe('RecordController', () => {
       const response = { status: true, message: 'Records retrieved', data: [] };
       jest.spyOn(service, 'findAllRecords').mockResolvedValue(response);
 
-      expect(await controller.findAll()).toEqual(response);
+      expect(await controller.findAllRecords()).toEqual(response);
     });
 
     it('should apply filters correctly', async () => {
@@ -106,7 +106,7 @@ describe('RecordController', () => {
       };
       jest.spyOn(service, 'findAllRecords').mockResolvedValue(response);
 
-      expect(await controller.findAll(query)).toEqual(response);
+      expect(await controller.findAllRecords(query)).toEqual(response);
     });
 
     it('should handle invalid record format', async () => {
@@ -119,7 +119,7 @@ describe('RecordController', () => {
       const response = { status: true, message: 'Records retrieved', data: [] };
       jest.spyOn(service, 'findAllRecords').mockResolvedValue(response);
 
-      expect(await controller.findAll(query)).toEqual(response);
+      expect(await controller.findAllRecords(query)).toEqual(response);
     });
   });
 });

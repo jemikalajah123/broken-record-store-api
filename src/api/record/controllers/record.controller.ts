@@ -16,7 +16,7 @@ export class RecordController {
   @ApiOperation({ summary: 'Create a new record' })
   @ApiResponse({ status: 201, description: 'Record successfully created' })
   @ApiResponse({ status: 400, description: 'Bad Request' })
-  async create(@Body() request: CreateRecordRequestDTO): Promise<IApiResponse> {
+  async createRecord(@Body() request: CreateRecordRequestDTO): Promise<IApiResponse> {
     return this.recordService.createRecord(request);
   }
 
@@ -24,7 +24,7 @@ export class RecordController {
   @ApiOperation({ summary: 'Update an existing record' })
   @ApiResponse({ status: 200, description: 'Record updated successfully' })
   @ApiResponse({ status: 500, description: 'Cannot find record to update' })
-  async update(
+  async updateRecord(
     @Param('id') id: string,
     @Body() updateRecordDto: UpdateRecordRequestDTO,
   ): Promise<IApiResponse> {
@@ -71,7 +71,7 @@ export class RecordController {
     enum: RecordCategory,
     type: String,
   })
-  async findAll(
+  async findAllRecords(
     @Query() query: GetRecordsQueryDto = {} as GetRecordsQueryDto,
   ): Promise<IApiResponse> {
     const { q, artist, album, format, category, page, limit } = query;
