@@ -94,27 +94,15 @@ export class RecordService {
     const cacheKey = `records:${q || ''}:${artist || ''}:${album || ''}:${format || ''}:${category || ''}:${page}:${limit}`;
   
     try {
-      let cachedRecords: Record[] | null = null;
+      let cachedRecords: IApiResponse| null = null;
       try {
-        cachedRecords = await this.cacheManager.get<Record[]>(cacheKey);
+        cachedRecords = await this.cacheManager.get<IApiResponse>(cacheKey);
       } catch (cacheError) {
         this.logger.warn(`Cache retrieval failed: ${cacheError.message}`);
       }
 
       if (cachedRecords) {
-        return {
-          status: true,
-          message: 'Records fetched successfully (cached)',
-          data: {
-            records: cachedRecords,
-            pagination: {
-              page,
-              limit,
-              totalPages: Math.ceil(cachedRecords.length / limit),
-              totalRecords: cachedRecords.length,
-            },
-          },
-        };
+        return cachedRecords
       }
   
       const query: any = {};
@@ -136,10 +124,8 @@ export class RecordService {
         .skip((page - 1) * limit)
         .limit(limit)
         .exec();
-  
-      await this.cacheManager.set(cacheKey, records, 60 * 1000);
-  
-      return {
+
+      const res = {
         status: true,
         message: 'Records fetched successfully',
         data: {
@@ -151,7 +137,11 @@ export class RecordService {
             totalRecords,
           },
         },
-      };
+      }
+  
+      await this.cacheManager.set(cacheKey, res, 60 * 1000);
+  
+      return res
     } catch (error) {
       this.logger.error(`Failed to fetch records: ${error.message}`, error.stack);
       throw new InternalServerErrorException('Failed to fetch records');

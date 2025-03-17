@@ -163,21 +163,41 @@ describe('RecordService', () => {
 
   describe('findAllRecords', () => {
     it('should return cached records if available', async () => {
-      cacheManager.get = jest.fn().mockResolvedValue([mockRecord]); 
-      
+      const mockResponse = {
+        status: true,
+        message: 'Records fetched successfully',
+        data: {
+          records: [mockRecord], // Ensure correct structure
+          pagination: { page: 1, limit: 20, totalPages: 1, totalRecords: 1 },
+        },
+      };
+    
+      cacheManager.get = jest.fn().mockResolvedValue(mockResponse);
+    
       const response = await service.findAllRecords();
     
       expect(cacheManager.get).toHaveBeenCalled();
-      expect(response.data.records).toEqual([mockRecord]); 
+      expect(response).toEqual(mockResponse); // Compare full response
     });
-
+    
     it('should return cached records if available', async () => {
       const mockRecords = [{ id: '1', artist: 'Test' }];
-      jest.spyOn(cacheManager, 'get').mockResolvedValue(mockRecords);
+      const mockResponse = {
+        status: true,
+        message: 'Records fetched successfully',
+        data: {
+          records: mockRecords,
+          pagination: { page: 1, limit: 20, totalPages: 1, totalRecords: 1 },
+        },
+      };
+    
+      jest.spyOn(cacheManager, 'get').mockResolvedValue(mockResponse);
     
       const result = await service.findAllRecords();
-      expect(result.data.records).toEqual(mockRecords);
+      
+      expect(result).toEqual(mockResponse);
     });
+    
 
     it('should return empty array when no records are found', async () => {
       jest.spyOn(recordModel, 'find').mockReturnValueOnce({

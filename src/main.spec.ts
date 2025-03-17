@@ -39,6 +39,7 @@ describe('Bootstrap', () => {
     app = {
       useGlobalPipes: jest.fn(),
       listen: jest.fn(),
+      enableCors: jest.fn(), // ✅ Add mock for enableCors
     };
 
     (NestFactory.create as jest.Mock).mockResolvedValue(app);
@@ -59,6 +60,7 @@ describe('Bootstrap', () => {
   it('should start the application', async () => {
     expect(NestFactory.create).toHaveBeenCalledWith(expect.any(Function));
     expect(app.useGlobalPipes).toHaveBeenCalledWith(expect.any(ValidationPipe));
+    expect(app.enableCors).toHaveBeenCalled();
     expect(SwaggerModule.createDocument).toHaveBeenCalledWith(app, expect.any(Object));
     expect(SwaggerModule.setup).toHaveBeenCalledWith('swagger', app, expect.any(Object));
     expect(app.listen).toHaveBeenCalledWith(process.env.PORT);

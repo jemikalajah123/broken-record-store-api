@@ -13,6 +13,12 @@ async function bootstrap() {
       whitelist: true,
     }),
   );
+
+  app.enableCors({
+    origin: '*', // Allow all origins (change this to a specific domain for security)
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    allowedHeaders: 'Content-Type, Authorization',
+  });
   // Swagger configuration
   const config = new DocumentBuilder()
     .setTitle('Record API')
