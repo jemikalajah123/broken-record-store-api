@@ -1,0 +1,134 @@
+name: broke-record-service CI - CD
+
+on:
+  push:
+    branches:
+      - develop
+      - master
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Run tests
+        run: |
+          npm run test
+
+  build-stage:
+    name: Build-Staging
+    runs-on: ubuntu-latest
+    needs: test
+    if: ${{ github.ref == 'refs/heads/develop' }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+        with:
+          ref: develop
+
+      - name: Authenticate with Google Cloud
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v1
+
+      - name: Configure Docker for GCR
+        run: gcloud auth configure-docker
+
+      - name: Build, tag, and push image to GCR
+        env:
+          GCR_REPOSITORY: gcr.io/${{ secrets.GCP_PROJECT_ID }}/pika
+        run: |
+          TAG=$(echo $GITHUB_SHA | head -c7)
+          docker build -t $GCR_REPOSITORY:stage-$TAG .
+          docker push $GCR_REPOSITORY:stage-$TAG
+
+  build-prod:
+    name: Build-Production
+    runs-on: ubuntu-latest
+    needs: test
+    if: ${{ github.ref == 'refs/heads/master' }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+        with:
+          ref: master
+
+      - name: Authenticate with Google Cloud
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v1
+
+      - name: Configure Docker for GCR
+        run: gcloud auth configure-docker
+
+      - name: Build, tag, and push image to GCR
+        env:
+          GCR_REPOSITORY: gcr.io/${{ secrets.GCP_PROJECT_ID }}/pika
+        run: |
+          TAG=$(echo $GITHUB_SHA | head -c7)
+          docker build -t $GCR_REPOSITORY:prod-$TAG -f Dockerfile.prod .
+          docker push $GCR_REPOSITORY:prod-$TAG
+
+  deploy-stage:
+    name: Deploy-Staging
+    runs-on: ubuntu-latest
+    needs: build-stage
+    if: ${{ github.ref == 'refs/heads/develop' }}
+    steps:
+      - name: Authenticate with Google Cloud
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v1
+
+      - name: Get GKE credentials
+        run: |
+          gcloud container clusters get-credentials ${{ secrets.GKE_CLUSTER_NAME_STAGE }} --region ${{ secrets.GCP_REGION }}
+
+      - name: Update deployment file
+        run: |
+          TAG=$(echo $GITHUB_SHA | head -c7)
+          sed -i 's|<IMAGE>|gcr.io/${{ secrets.GCP_PROJECT_ID }}/pika:stage-'${TAG}'|' $GITHUB_WORKSPACE/config/staging-deployment.yml
+
+      - name: Deploy to GKE
+        run: kubectl apply -f $GITHUB_WORKSPACE/config/staging-deployment.yml
+
+      - name: Verify deployment
+        run: kubectl rollout status deployment/userbe
+
+  deploy-prod:
+    name: Deploy-Production
+    runs-on: ubuntu-latest
+    needs: build-prod
+    if: ${{ github.ref == 'refs/heads/master' }}
+    steps:
+      - name: Authenticate with Google Cloud
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v1
+
+      - name: Get GKE credentials
+        run: |
+          gcloud container clusters get-credentials ${{ secrets.GKE_CLUSTER_NAME_PROD }} --region ${{ secrets.GCP_REGION }}
+
+      - name: Update deployment file
+        run: |
+          TAG=$(echo $GITHUB_SHA | head -c7)
+          sed -i 's|<IMAGE>|gcr.io/${{ secrets.GCP_PROJECT_ID }}/pika:prod-'${TAG}'|' $GITHUB_WORKSPACE/config/prod-deployment.yml
+
+      - name: Deploy to GKE
+        run: kubectl apply -f $GITHUB_WORKSPACE/config/prod-deployment.yml
+
+      - name: Verify deployment
+        run: kubectl rollout status deployment/userbe
