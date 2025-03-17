@@ -104,6 +104,21 @@ To improve query performance and reduce database load, I integrated **Redis cach
 
 ---  
 
+## 🔹 Other Improvements: Dockerization & CI/CD Pipeline
+To further streamline deployment and improve development efficiency, I introduced:
+
+### Dockerization:
+
+- Created a Dockerfile for local development and a Dockerfile.prod for optimized production builds.
+- Ensures a consistent environment across all deployments.
+
+### CI/CD Pipeline:
+Automated pipeline script to:
+- Run tests (unit & e2e) before deployment.
+- Build the Docker image.
+- Deploy the service to production automatically.
+- Ensures code quality and smooth deployments.
+
 # Summary  
 
 By implementing these optimizations and restructuring the project, I significantly improved performance, maintainability, and scalability:  
@@ -112,7 +127,7 @@ By implementing these optimizations and restructuring the project, I significant
 ✅ Efficient order management with stock validation.  
 ✅ Improved response times with Redis caching.  
 ✅ Clean, modular project structure for long-term maintainability. 
-✅ 100% Test coverage.   
+✅ 100% Test coverage that is incorporated to run in the pipeline before deployment.   
 
 These changes enhance system efficiency and make it easier to scale and maintain over time. 🚀
 
