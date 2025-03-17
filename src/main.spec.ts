@@ -1,7 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
-import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { SwaggerModule } from '@nestjs/swagger';
 
 jest.mock('@nestjs/core', () => ({
   NestFactory: {
@@ -26,7 +26,6 @@ jest.mock('@nestjs/swagger', () => {
     })),
   };
 });
-
 
 describe('Application Bootstrap', () => {
   let app: any;
@@ -65,8 +64,15 @@ describe('Application Bootstrap', () => {
     });
 
     // Verify that Swagger document was created and setup
-    expect(SwaggerModule.createDocument).toHaveBeenCalledWith(app, expect.any(Object));
-    expect(SwaggerModule.setup).toHaveBeenCalledWith('swagger', app, expect.any(Object));
+    expect(SwaggerModule.createDocument).toHaveBeenCalledWith(
+      app,
+      expect.any(Object),
+    );
+    expect(SwaggerModule.setup).toHaveBeenCalledWith(
+      'swagger',
+      app,
+      expect.any(Object),
+    );
 
     // Verify that the app was instructed to listen on the specified port
     expect(app.listen).toHaveBeenCalledWith(expect.any(Number));

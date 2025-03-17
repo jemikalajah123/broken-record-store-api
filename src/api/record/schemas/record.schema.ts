@@ -42,5 +42,9 @@ RecordSchema.index({ artist: 1 });
 RecordSchema.index({ album: 1 });
 RecordSchema.index({ format: 1 });
 RecordSchema.index({ category: 1 });
-RecordSchema.index({ artist: 'text', album: 'text', category: 'text', format: 'text' });
-
+RecordSchema.index({
+  artist: 'text',
+  album: 'text',
+  category: 'text',
+  format: 'text',
+});

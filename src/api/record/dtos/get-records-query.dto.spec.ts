@@ -29,7 +29,7 @@ describe('GetRecordsQueryDto', () => {
 
   it('should transform page and limit into numbers', async () => {
     const rawData = { page: '2', limit: '15' }; // Simulating query params (which are strings)
-    
+
     const dto = plainToInstance(GetRecordsQueryDto, rawData); // ✅ Correctly transforms
 
     // Ensure validation still passes

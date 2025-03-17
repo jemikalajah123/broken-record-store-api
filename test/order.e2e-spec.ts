@@ -49,7 +49,6 @@ describe('OrderController (e2e)', () => {
   });
 
   it('should not create an order if stock is insufficient', async () => {
-
     const record = await recordModel.create({
       artist: 'fivey Beatles',
       album: 'Abbey Road',
@@ -71,7 +70,7 @@ describe('OrderController (e2e)', () => {
       .post('/orders')
       .send(createOrderDto)
       .expect(400);
-      
+
     expect(response.body).toHaveProperty('error', 'Bad Request');
     expect(response.body).toHaveProperty(
       'message',
@@ -89,14 +88,13 @@ describe('OrderController (e2e)', () => {
   });
 
   it('should get an order by ID', async () => {
-
     const record = await recordModel.create({
       artist: 'The meal',
       album: 'Abbey Road',
       price: 25,
       qty: 10,
       format: 'Vinyl',
-      category: 'Pop'
+      category: 'Pop',
     });
 
     recordId = record._id;
@@ -107,9 +105,9 @@ describe('OrderController (e2e)', () => {
     };
 
     const res = await request(app.getHttpServer())
-    .post('/orders')
-    .send(createOrderDto)
-    .expect(201);
+      .post('/orders')
+      .send(createOrderDto)
+      .expect(201);
 
     orderId = res.body.data._id;
 

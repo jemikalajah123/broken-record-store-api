@@ -71,16 +71,15 @@ describe('OrderService', () => {
     it('should throw InternalServerErrorException with default message if error has no message', async () => {
       const errorWithoutMessage = new Error();
       delete errorWithoutMessage.message; // Ensure error has no message
-    
+
       mockRecordService.findOne.mockRejectedValue(errorWithoutMessage);
-    
+
       await expect(
         service.createOrder({ recordId: 'recordId123', quantity: 2 }),
       ).rejects.toThrowError(
         new InternalServerErrorException('An unexpected error occurred'),
       );
     });
-    
 
     it('should throw NotFoundException if record is not found', async () => {
       mockRecordService.findOne.mockResolvedValue(null);

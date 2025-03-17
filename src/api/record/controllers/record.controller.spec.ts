@@ -49,7 +49,9 @@ describe('RecordController', () => {
 
     it('should throw an error if service fails', async () => {
       const dto: CreateRecordRequestDTO = { title: 'Test Record' } as any;
-      jest.spyOn(service, 'createRecord').mockRejectedValue(new Error('Service Error'));
+      jest
+        .spyOn(service, 'createRecord')
+        .mockRejectedValue(new Error('Service Error'));
 
       await expect(controller.create(dto)).rejects.toThrow('Service Error');
     });
@@ -68,9 +70,13 @@ describe('RecordController', () => {
     it('should throw an error if the record does not exist', async () => {
       const id = 'invalid-id';
       const dto: UpdateRecordRequestDTO = { title: 'Updated Record' } as any;
-      jest.spyOn(service, 'updateRecord').mockRejectedValue(new Error('Cannot find record to update'));
+      jest
+        .spyOn(service, 'updateRecord')
+        .mockRejectedValue(new Error('Cannot find record to update'));
 
-      await expect(controller.update(id, dto)).rejects.toThrow('Cannot find record to update');
+      await expect(controller.update(id, dto)).rejects.toThrow(
+        'Cannot find record to update',
+      );
     });
   });
 
@@ -93,7 +99,11 @@ describe('RecordController', () => {
         limit: 10,
       } as any;
 
-      const response = { status: true, message: 'Filtered records retrieved', data: [] };
+      const response = {
+        status: true,
+        message: 'Filtered records retrieved',
+        data: [],
+      };
       jest.spyOn(service, 'findAllRecords').mockResolvedValue(response);
 
       expect(await controller.findAll(query)).toEqual(response);
@@ -103,7 +113,7 @@ describe('RecordController', () => {
       const query: GetRecordsQueryDto = {
         format: 'INVALID_FORMAT' as any,
         page: 0,
-        limit: 0
+        limit: 0,
       };
 
       const response = { status: true, message: 'Records retrieved', data: [] };

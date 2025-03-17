@@ -60,8 +60,11 @@ describe('RecordController (e2e)', () => {
     const response = await request(app.getHttpServer())
       .get('/records?artist=The Fake Band')
       .expect(200);
-      expect(response.body.data.records.length).toBe(1);
-    expect(response.body.data.records[0]).toHaveProperty('artist', 'The Fake Band');
+    expect(response.body.data.records.length).toBe(1);
+    expect(response.body.data.records[0]).toHaveProperty(
+      'artist',
+      'The Fake Band',
+    );
   });
 
   // Test to create a record
@@ -89,7 +92,6 @@ describe('RecordController (e2e)', () => {
 
   // Test to update a record
   it('should update an existing record', async () => {
-
     const createRecordDto = {
       artist: 'Themy Beatles',
       album: 'Abbey Road',
@@ -117,22 +119,18 @@ describe('RecordController (e2e)', () => {
       .expect(200);
 
     expect(response.body).toHaveProperty('status', true);
-    expect(response.body.data).toHaveProperty(
-      'album',
-      'Abbey Rd - Remastered',
-    );
+    expect(response.body.data).toHaveProperty('album', 'Abbey Rd - Remastered');
   });
 
   // Test to get all records with filters
   it('should get records filtered by artist', async () => {
-
     const createRecordDto = {
       artist: 'Frank Beatles',
       album: 'Abbey Road',
       price: 25,
       qty: 10,
       format: RecordFormat.VINYL,
-      category: RecordCategory.POP
+      category: RecordCategory.POP,
     };
 
     const res = await request(app.getHttpServer())
@@ -141,14 +139,17 @@ describe('RecordController (e2e)', () => {
       .expect(201);
 
     recordId = res.body.data._id;
-    
+
     const response = await request(app.getHttpServer())
       .get('/records?artist=Frank Beatles')
       .expect(200);
 
     expect(response.body).toHaveProperty('status', true);
     expect(response.body.data.records.length).toBeGreaterThan(0);
-    expect(response.body.data.records[0]).toHaveProperty('artist', 'Frank Beatles');
+    expect(response.body.data.records[0]).toHaveProperty(
+      'artist',
+      'Frank Beatles',
+    );
   });
 
   // Test to get all records with multiple filters
@@ -182,7 +183,10 @@ describe('RecordController (e2e)', () => {
       'category',
       RecordCategory.ROCK,
     );
-    expect(response.body.data.records[0]).toHaveProperty('format', RecordFormat.VINYL);
+    expect(response.body.data.records[0]).toHaveProperty(
+      'format',
+      RecordFormat.VINYL,
+    );
   });
 
   afterEach(async () => {

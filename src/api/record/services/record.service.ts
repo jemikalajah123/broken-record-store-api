@@ -46,7 +46,9 @@ export class RecordService {
     } catch (error) {
       this.logger.error('Error creating record', error.stack);
       if (error.code === 11000) {
-        throw new ConflictException('A record with this artist, album, and format already exists.');
+        throw new ConflictException(
+          'A record with this artist, album, and format already exists.',
+        );
       }
 
       throw new InternalServerErrorException('Failed to create record');
@@ -62,16 +64,16 @@ export class RecordService {
       if (!record) {
         throw new NotFoundException('Record not found');
       }
-  
+
       if (updateDto.mbid && updateDto.mbid !== record.mbid) {
         updateDto.tracklist = await this.musicBrainzService.fetchTracklist(
           updateDto.mbid,
         );
       }
-  
+
       Object.assign(record, updateDto);
       await record.save();
-  
+
       return {
         status: true,
         message: 'Record updated successfully',
@@ -81,7 +83,10 @@ export class RecordService {
       if (error instanceof NotFoundException) {
         throw error;
       }
-      this.logger.error(`Failed to update record: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to update record: ${error.message}`,
+        error.stack,
+      );
       throw new InternalServerErrorException('Failed to update record');
     }
   }
@@ -96,9 +101,9 @@ export class RecordService {
     limit: number = 20,
   ): Promise<IApiResponse> {
     const cacheKey = `records:${q || ''}:${artist || ''}:${album || ''}:${format || ''}:${category || ''}:${page}:${limit}`;
-  
+
     try {
-      let cachedRecords: IApiResponse| null = null;
+      let cachedRecords: IApiResponse | null = null;
       try {
         cachedRecords = await this.cacheManager.get<IApiResponse>(cacheKey);
       } catch (cacheError) {
@@ -106,26 +111,26 @@ export class RecordService {
       }
 
       if (cachedRecords) {
-        return cachedRecords
+        return cachedRecords;
       }
-  
+
       const query: any = {};
       if (q) {
         query.$text = { $search: q };
-      }else{
+      } else {
         if (artist) query.artist = { $regex: `^${artist}$`, $options: 'i' };
-        if (album) query.album = { $regex: `^${album}$`, $options: 'i' };     
+        if (album) query.album = { $regex: `^${album}$`, $options: 'i' };
       }
-      
+
       if (format) query.format = format;
       if (category) query.category = category;
-  
+
       const totalRecords = await this.recordModel.countDocuments(query);
       const records = await this.recordModel
         .find(query)
         .skip((page - 1) * limit)
         .limit(limit)
-        .sort({createdAt: -1 })
+        .sort({ createdAt: -1 })
         .exec();
 
       const res = {
@@ -140,24 +145,27 @@ export class RecordService {
             totalRecords,
           },
         },
-      }
-  
+      };
+
       await this.cacheManager.set(cacheKey, res, 60 * 1000);
-  
-      return res
+
+      return res;
     } catch (error) {
-      this.logger.error(`Failed to fetch records: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to fetch records: ${error.message}`,
+        error.stack,
+      );
       throw new InternalServerErrorException('Failed to fetch records');
     }
   }
-  
+
   async updateStock(recordId: string, quantityChange: number): Promise<Record> {
     try {
       const record = await this.recordModel.findById(recordId);
       if (!record) {
         throw new NotFoundException(`Record with ID ${recordId} not found`);
       }
-    
+
       if (record.qty + quantityChange < 0) {
         throw new BadRequestException('Not enough stock available');
       }
@@ -165,15 +173,20 @@ export class RecordService {
       await record.save();
       return record;
     } catch (error) {
-      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
         throw error;
       }
-      this.logger.error(`Failed to update stock: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to update stock: ${error.message}`,
+        error.stack,
+      );
       throw new InternalServerErrorException('Failed to update stock');
     }
-    
   }
-  
+
   async findOne(recordId: string): Promise<Record | null> {
     try {
       const record = await this.recordModel.findById(recordId);
@@ -185,9 +198,11 @@ export class RecordService {
       if (error instanceof NotFoundException) {
         throw error;
       }
-      this.logger.error(`Failed to fetch record: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to fetch record: ${error.message}`,
+        error.stack,
+      );
       throw new InternalServerErrorException('Failed to fetch record');
     }
-    
   }
 }

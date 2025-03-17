@@ -71,7 +71,9 @@ export class RecordController {
     enum: RecordCategory,
     type: String,
   })
-  async findAll(@Query() query: GetRecordsQueryDto = {} as GetRecordsQueryDto): Promise<IApiResponse> {
+  async findAll(
+    @Query() query: GetRecordsQueryDto = {} as GetRecordsQueryDto,
+  ): Promise<IApiResponse> {
     const { q, artist, album, format, category, page, limit } = query;
     const validatedFormat = Object.values(RecordFormat).includes(
       format as RecordFormat,

@@ -1,7 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { MusicBrainzService } from './musicbrainz.service';
 import { HttpRequestService } from '../../../shared/http-request';
-import { Logger } from '@nestjs/common';
 import { parseStringPromise } from 'xml2js';
 
 jest.mock('xml2js', () => ({
@@ -11,7 +10,6 @@ jest.mock('xml2js', () => ({
 describe('MusicBrainzService', () => {
   let service: MusicBrainzService;
   let httpRequestService: HttpRequestService;
-  let logger: Logger;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -28,7 +26,6 @@ describe('MusicBrainzService', () => {
 
     service = module.get<MusicBrainzService>(MusicBrainzService);
     httpRequestService = module.get<HttpRequestService>(HttpRequestService);
-    logger = new Logger(MusicBrainzService.name);
   });
 
   afterEach(() => {
@@ -99,7 +96,7 @@ describe('MusicBrainzService', () => {
       (httpRequestService.makeRequest as jest.Mock).mockRejectedValue(
         new Error('Network error'),
       );
-      const loggerSpy = jest.spyOn(service["logger"], 'error');
+      const loggerSpy = jest.spyOn(service['logger'], 'error');
 
       const result = await service.fetchTracklist('invalid-mbid');
       expect(result).toEqual([]);

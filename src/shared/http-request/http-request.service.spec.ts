@@ -3,7 +3,12 @@ import { HttpRequestService } from './http-request.service';
 import { Test, TestingModule } from '@nestjs/testing';
 import { UnprocessableEntityException } from '@nestjs/common';
 import { of, throwError } from 'rxjs';
-import { Method, AxiosResponse, InternalAxiosRequestConfig, AxiosHeaders } from 'axios';
+import {
+  Method,
+  AxiosResponse,
+  InternalAxiosRequestConfig,
+  AxiosHeaders,
+} from 'axios';
 
 describe('HttpRequestService', () => {
   let service: HttpRequestService;
@@ -72,10 +77,13 @@ describe('HttpRequestService', () => {
         },
       };
 
-      jest.spyOn(httpService, 'request').mockReturnValue(throwError(() => mockError));
+      jest
+        .spyOn(httpService, 'request')
+        .mockReturnValue(throwError(() => mockError));
 
-      await expect(service.makeRequest(mockRequestData))
-        .rejects.toThrow(UnprocessableEntityException);
+      await expect(service.makeRequest(mockRequestData)).rejects.toThrow(
+        UnprocessableEntityException,
+      );
     });
   });
 });
